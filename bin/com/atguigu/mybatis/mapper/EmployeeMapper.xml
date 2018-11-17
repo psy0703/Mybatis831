@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <!--namespace必须和接口名一致  -->
+<mapper namespace="com.atguigu.mybatis.mapper.EmployeeMapper">
+
+		<!-- if： 对传入的参数进行判断
+				test: 传入一个OGNL表达式，返回一个判断结果boolean型！
+				
+			学过的表达式：
+					EL表达式：  ${表达式}：  key，POJO的属性
+					SPEL表达式：  #{表达式}：  POJO的key或者是POJO的方法
+					
+					从参数Map中取出参数： #{参数名（表达式）}
+					
+			在OGNL中：  && 等同于 and
+					 || 等同于 or
+					 
+		
+			异常：  没有id，where　紧跟　and
+			解决：  ①在where　和　and　间跟一个恒等条件，不影响结果！　　
+				　②使用<where>标签
+		
+			<where>标签可以在sql后，拼接一个ＷＨＥＲＥ，去掉where后多余的and
+					局限： 无法祛除语句后多余的and；
+					
+			<trim>:
+					prefix: 在标签体语句的前部，加一个前缀
+					suffix: 在标签体语句的后部，加一个后缀
+					prefixOverrides: 祛除标签体语句指定的前缀
+					suffixOverrides: 祛除标签体语句指定的后缀
+			
+		 -->
+		<select id="getEmployeeById" resultType="employee">
+				select * from tbl_employee 
+				
+			<!-- <where> -->
+			<trim prefix="where" suffixOverrides="and">
+				<if test="id != null">
+					  id=#{id} and
+				</if>
+				<if test="lastName !=null and lastName != '' ">
+				         last_name=#{lastName} and
+				</if>
+				<if test="gender == 'male' or gender == 'female'">
+						 gender=#{gender} and
+				</if>
+				<if test="email !=null and email != ''">
+						 email=#{email} 
+				</if>
+			</trim>
+			<!-- </where> -->
+		</select>
+		
+		<!-- set :
+					在语句前部整体生成一个SET,祛除多余的,
+					
+			 使用<trim> 也可以！
+		 -->
+		<update id="updateEmployee">
+				update tbl_employee 
+			<set>	
+				<if test="lastName !=null and lastName != '' ">
+				         ,
+				</if>
+				<if test="gender == 'male' or gender == 'female'">
+						 gender=#{gender},
+				</if>
+				<if test="email !=null and email != ''">
+						email=#{email}
+				</if>
+			</set>
+				<where>
+					<if test="id != null">
+					  id=#{id} 
+					</if>
+				</where>
+			
+		</update>
+		
+	<!-- choose标签： 类似java中的分支语句！
+				when: 相当于自带break的case!
+				otherwise: 相当于default语句块！
+				
+	 -->
+		<select id="getEmployeeBySingleCondition" resultType="employee">
+				select * from tbl_employee where
+				<choose>
+					<when test="lastName !=null and lastName != ''">
+							last_name=#{lastName}
+					</when>
+					<when test="gender == 'male' or gender == 'female'">
+							 gender=#{gender}
+					</when>
+					<otherwise>
+							id=1
+					</otherwise>
+				</choose>
+		</select>
+		
+		<!--  foreach: 通过遍历一个集合动态生成sql语句！
+					close:   整个语句以什么结束；
+					open：        整个语句以什么开始；
+					
+					collection：  类似JSTLforeach的items，遍历的集合！
+					
+					index：  遍历的是数组或List集合，元素的索引！
+					                     遍历的是Map,是key
+								
+					item：        一般都是使用item!     
+							 遍历的是数组或List集合，代表元素值本身！
+							 遍历的是Map,是value
+							 
+					separator： 分隔符！
+					
+			Collection如果是个Map，需要一个key来代表整个传入的Map集合！
+					① 使用@param("xx")为当前的map自定义一个key
+					② 使用一个内置参数
+						_parameter:  代表传入的整个参数Map!
+								单个参数： _parameter代表当前的这个参数，可以通过  #{_parameter}取出！
+								多个参数或者是集合： _parameter代表整个传入的所有的参数！
+				
+					①和②二选一！
+		 -->
+		 
+		 <select id="getEmployeeByCondition" resultType="employee">
+		 		select * from tbl_employee 
+		 		<!-- where id in (x,x,x,x,x); -->
+		 		<foreach collection="_parameter" close=")" index="i" item="value" open="where id in (" separator=",">
+		 				#{value}
+		 		</foreach>
+		 </select>
+		 
+		 <!-- 批量插入：
+		 			①insert into 表名 (xx,xx,xx) values(),(),(); 
+		 			 
+		 			②insert into 表名 (xx,xx,xx) values();
+		 			insert into 表名 (xx,xx,xx) values();
+		 			insert into 表名 (xx,xx,xx) values();
+		 			
+		 			结合：allowMultiQueries=true才能生效！
+		  -->
+		 <insert id="batchInsert">
+		 		<!-- insert into tbl_employee(last_name,gender,email) 
+		 		<foreach collection="list" close="" index="i" item="e" open="values" separator=",">
+		 				(#{e.lastName},#{e.gender},#{e.email})
+		 		</foreach> -->
+		 		
+		 		<!-- 默认情况不支持此种方式的批量插入 ，需要加入参数，允许此种批量插入：
+		 					allowMultiQueries=true
+		 		 -->
+		 		<foreach collection="list"  item="e"  separator=";">
+		 				insert into tbl_employee(last_name,gender,email) values (#{e.lastName},#{e.gender},#{e.email})
+		 		</foreach>
+		 		
+		 </insert>
+		 
+		 <!--bind:
+		 			 在生成sql时，在参数前后进行拼接 
+		 			name: 绑定后的参数的属性名
+		 			value: 传入一个OGNL表达式，对参数进行绑定 
+		 			
+		 			单个参数，如何确定参数名！
+		 					要么使用@Param("xx") 或者使用_parameter
+		 			 -->
+		 <select id="getEmployeeByEmail" resultType="employee">
+		 
+		 		<bind name="_email" value="'%'+_parameter+'%'"/>
+		 		<!-- 引入写好的sql标签 -->
+		 		<include refid="commonSql">
+		 				<property name="tableName" value="employee"/>
+		 		</include>
+		 	     where email like #{_email}
+		 </select>
+		 
+		 <!-- sql作用是抽取复用的sql语句 -->
+		 <sql id="commonSql">
+		 		select * from tbl_${tableName}
+		 </sql>
+
+</mapper>

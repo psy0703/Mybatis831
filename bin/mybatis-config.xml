@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--dtd是一种xml的约束文件，只有把约束导入后，才能编写约束中指定的标签！  -->
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+  <properties resource="druid.properties"/>
+  	
+  
+  
+  <settings>
+  		 <!-- 开启数据的下划线命名到java的驼峰式命名的映射 -->
+  		<setting name="mapUnderscoreToCamelCase" value="true"/>
+  </settings>
+  
+  
+  <typeAliases>
+  		<package name="com.atguigu.mybatis.pojo" />
+  </typeAliases>
+  
+  
+
+  <environments default="development">
+  
+    <environment id="development">
+      <transactionManager type="JDBC"/>
+      <dataSource type="POOLED">
+      <!-- 需要引入外部的属性文件，才能使用${key}来读取配置文件中的属性  -->
+        <property name="driver" value="${driverClassName}"/>
+        <property name="url" value="${url}"/>
+        <property name="username" value="${username}"/>
+        <property name="password" value="${password}"/>
+      </dataSource>
+    </environment>
+  </environments>
+  
+  
+  <mappers>
+     <package name="com.atguigu.mybatis.mapper"/>
+  </mappers>
+</configuration>
